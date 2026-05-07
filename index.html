@@ -125,10 +125,6 @@
             border-radius: 25px;
             font-size: 15px;
             outline: none;
-            transition: border 0.3s;
-        }
-        #user-input:focus {
-            border-color: #165DFF;
         }
         .mic-btn, .send-btn {
             width: 45px;
@@ -159,25 +155,13 @@
             background: #165DFF;
             color: white;
         }
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #e2e8f0;
-            border-top-color: #165DFF;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
     <div class="ip-container">
         <button class="avatar-btn prev-btn" onclick="prevAvatar()">‹</button>
         <div class="ip-avatar">
-            <img id="avatar-img" src="" alt="IP形象">
+            <img id="avatar-img" src="girl.png" alt="IP形象">
         </div>
         <button class="avatar-btn next-btn" onclick="nextAvatar()">›</button>
     </div>
@@ -193,38 +177,31 @@
     </div>
 
     <script>
-        // --------------------------
-        // 配置区（你只需要改这里）
-        // --------------------------
+        // 替换成你两张IP图片文件名，直接和html放同一文件夹
         const IP_IMAGES = [
-            "https://raw.githubusercontent.com/Beryllle/7/main/WechatIMG7684.png", // 替换为女生IP图链接
-            "https://raw.githubusercontent.com/Beryllle/7/main/%E6%B6%93%EE%85%9E%E7%B8%BE%E9%8D%9D%E4%BD%BA%E5%A2%9DIP%E7%92%81%E6%8D%90%EE%85%B8%20(1).png"  // 替换为男生IP图链接
+            "girl.png",
+            "boy.png"
         ];
-        const API_KEY = "ark-fc480865-2676-46dc-95e5-9a066a244cb4-e5c49"; // 去豆包开放平台获取
-        const API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-        const MODEL_ID = "doubao-seed-1-8-251228"; // 豆包开放平台模型ID
 
-        // 知识库（已经帮你写好了）
-        const KNOWLEDGE_BASE = `
-你是深国创中心的IP问答助手，回答要友好、简洁、口语化，用100字以内回答。
-深国创中心（深圳国家高技术产业创新中心）：
-- 1992年成立，国家发改委+深圳市联合组建，非营利性公共技术服务机构
-- 定位：高端智库+平台服务，聚焦深圳20+8产业集群
-- 核心产品DIKI模型：Data汇聚、Information连接、Knowledge沉淀、Insight启发
-- DIKI-Brain产业大脑：政府产业分析决策引擎，解决底数不清、图谱断裂、前沿难追问题
-- DIKI-Link招商系统：政企招商数智化助手，解决定位模糊、企业挖掘不准、诉求把握不足问题
-- 实力：4.6亿投入、4年建设、400人团队、400亿+产业数据、8.9亿实体节点、22亿关系边
-品牌故事：DIKI得名于非洲犬羚，以"数字鼻息"感知产业脉搏，成为商业版图中的数字犬羚，听见变化，预见未来。
-`;
-
-        // --------------------------
-        // 功能代码（不用改）
-        // --------------------------
         let currentAvatar = 0;
         let recognition = null;
         let isListening = false;
 
-        // 初始化IP形象
+        // 内置问答知识库
+        const qaLib = [
+            {q: "你是谁", a: "我是深国创中心IP智能问答助手，可以为您解答深国创中心和DIKI相关所有问题。"},
+            {q: "深国创中心介绍", a: "深圳国家高技术产业创新中心1992年成立，由国家发改委与深圳市政府联合组建，是非营利性公共技术服务机构，走高端智库+平台服务双轮驱动模式。"},
+            {q: "DIKI是什么", a: "DIKI品牌源自非洲犬羚精灵，以数字鼻息感知产业脉搏，构建政企研投协同网络，使命是听见变化，预见未来。"},
+            {q: "DIKI品牌故事", a: "DIKI得名于非洲草原犬羚，身形小巧感官敏锐，能精准预警风向变化；我们像犬羚一样，把海量数据变成产业洞察，搭建多方协同网络。"},
+            {q: "DIKI模型", a: "DIKI四层模型：Data汇聚全球400亿+产业要素，Information通过知识图谱万物互联，Knowledge沉淀300+研究员专业经验，Insight输出决策方案。"},
+            {q: "为什么选择你们", a: "我们有4.6亿元战略投入、4年攻坚建设、400人专业团队，汇聚超400亿条产业数据，拥有超大产业知识图谱与资深智库团队。"},
+            {q: "产业知识图谱", a: "依托动态本体建模，覆盖33类实体、56种语义关系，包含8.9亿实体节点、22亿关系边，支撑深圳20+8产业集群研究。"},
+            {q: "DIKI-Brain", a: "DIKI-Brain是政府产业分析决策引擎，解决产业底数不清、产业链图谱断裂、前沿趋势追踪滞后三大痛点。"},
+            {q: "DIKI-Link", a: "DIKI-Link是政企招商数智化助手，帮招商人员精准定位产业、挖掘优质企业、匹配政策诉求，成为懂产业的招商专家。"},
+            {q: "智库实力", a: "拥有15年战新产业规划经验、70+院士顾问、28个产业研究中心、4000+行业专家库，累计完成五百多项副省级以上课题。"}
+        ];
+
+        // 初始化IP
         function initAvatar() {
             document.getElementById("avatar-img").src = IP_IMAGES[currentAvatar];
         }
@@ -237,138 +214,95 @@
             document.getElementById("avatar-img").src = IP_IMAGES[currentAvatar];
         }
 
-        // 自动自我介绍
+        // 开机自我介绍
         window.onload = function() {
             initAvatar();
             setTimeout(() => {
-                addAIMessage("你好呀！我是深国创中心的小七，你可以问我关于深国创中心和DIKI的任何问题，我都会尽力回答你~");
-                speak("你好呀！我是深国创中心的小七，你可以问我关于深国创中心和DIKI的任何问题，我都会尽力回答你~");
+                let text = "你好呀！我是深国创中心IP助手，你可以问我深国创中心、DIKI品牌、DIKI模型、产业大脑、招商系统相关问题哦。";
+                addAIMessage(text);
+                speak(text);
             }, 500);
         };
 
         // 语音朗读
         function speak(text) {
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 1;
-                speechSynthesis.speak(utterance);
+                let u = new SpeechSynthesisUtterance(text);
+                u.lang = 'zh-CN';
+                u.rate = 1;
+                speechSynthesis.speak(u);
             }
         }
 
-        // 语音输入
+        // 语音识别
         function toggleVoiceInput() {
             const micBtn = document.getElementById("mic-btn");
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("你的浏览器不支持语音识别，建议用Chrome打开");
+            if (!window.webkitSpeechRecognition && !window.SpeechRecognition) {
+                alert("请用Chrome或手机自带浏览器打开");
                 return;
             }
-
             if (isListening) {
                 recognition.stop();
                 isListening = false;
                 micBtn.classList.remove("active");
                 return;
             }
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'zh-CN';
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SR();
+            recognition.lang = "zh-CN";
             recognition.continuous = false;
             recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                isListening = true;
-                micBtn.classList.add("active");
-            };
-            recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                document.getElementById("user-input").value = text;
+            recognition.onstart = ()=>{isListening=true;micBtn.classList.add("active");};
+            recognition.onresult = e=>{
+                let txt = e.results[0][0].transcript;
+                document.getElementById("user-input").value = txt;
                 sendMessage();
             };
-            recognition.onend = () => {
-                isListening = false;
-                micBtn.classList.remove("active");
-            };
-            recognition.onerror = (err) => {
-                alert("语音识别出错：" + err.error);
-                isListening = false;
-                micBtn.classList.remove("active");
-            };
-
+            recognition.onend = ()=>{isListening=false;micBtn.classList.remove("active");};
             recognition.start();
         }
 
-        // 发送消息
-        async function sendMessage() {
-            const input = document.getElementById("user-input");
-            const message = input.value.trim();
-            if (!message) return;
-
-            addUserMessage(message);
-            input.value = "";
-
-            const loadingId = addLoadingMessage();
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: MODEL_ID,
-                        messages: [
-                            { role: "system", content: KNOWLEDGE_BASE },
-                            { role: "user", content: message }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 500
-                    })
-                });
-
-                const data = await response.json();
-                const reply = data.choices[0].message.content;
-                removeLoadingMessage(loadingId);
-                addAIMessage(reply);
-                speak(reply);
-            } catch (error) {
-                removeLoadingMessage(loadingId);
-                addAIMessage("抱歉，我现在有点卡，稍后再问我吧~");
+        // 匹配问答
+        function getAnswer(question) {
+            let q = question.trim().toLowerCase();
+            for(let item of qaLib){
+                if(q.includes(item.q)){
+                    return item.a;
+                }
             }
+            return "我可以为你解答：深国创中心介绍、DIKI品牌故事、DIKI四层模型、产业大脑、招商系统、团队实力等问题，你可以换个方式提问~";
         }
 
-        // 添加消息到聊天框
+        // 发送消息
+        function sendMessage() {
+            let input = document.getElementById("user-input");
+            let msg = input.value.trim();
+            if(!msg) return;
+            addUserMessage(msg);
+            input.value = "";
+            setTimeout(()=>{
+                let ans = getAnswer(msg);
+                addAIMessage(ans);
+                speak(ans);
+            }, 600);
+        }
+
+        // 聊天气泡
         function addUserMessage(text) {
-            const chat = document.getElementById("chat-messages");
-            const div = document.createElement("div");
+            let chat = document.getElementById("chat-messages");
+            let div = document.createElement("div");
             div.className = "message user-message";
             div.innerHTML = `<div class="message-bubble user-bubble">${text}</div>`;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
         }
         function addAIMessage(text) {
-            const chat = document.getElementById("chat-messages");
-            const div = document.createElement("div");
+            let chat = document.getElementById("chat-messages");
+            let div = document.createElement("div");
             div.className = "message";
             div.innerHTML = `<div class="message-bubble ai-bubble">${text}</div>`;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
-        }
-        function addLoadingMessage() {
-            const chat = document.getElementById("chat-messages");
-            const div = document.createElement("div");
-            div.className = "message";
-            div.id = "loading-" + Date.now();
-            div.innerHTML = `<div class="message-bubble ai-bubble"><div class="loading"></div> 正在思考...</div>`;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
-            return div.id;
-        }
-        function removeLoadingMessage(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
         }
     </script>
 </body>
